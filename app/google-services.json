@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "739281657600",
+    "firebase_url": "https://vocabtrainer-6651f-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "vocabtrainer-6651f",
+    "storage_bucket": "vocabtrainer-6651f.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:739281657600:android:170a1dc48d5745855ddde5",
+        "android_client_info": {
+          "package_name": "com.example.vocabtrainer"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "739281657600-dnc8raevk9f3d81t9pnudubsuj4u28c2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDDYhyzSWEfjICdz8bWP19MAh5ljTfU5ro"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "739281657600-dnc8raevk9f3d81t9pnudubsuj4u28c2.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
