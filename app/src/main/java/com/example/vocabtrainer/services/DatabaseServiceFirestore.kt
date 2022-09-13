@@ -11,7 +11,7 @@ class DatabaseServiceFirestore : DatabaseService {
     private val ref: FirebaseFirestore = Firebase.firestore
     private val vocabsRef: CollectionReference = ref.collection("vocabs")
 
-    override suspend fun getVocabs(): List<Vocab> {
+    override suspend fun getVocabs(limit: Int): List<Vocab> {
         vocabsRef
             .get()
 //            .addOnSuccessListener {

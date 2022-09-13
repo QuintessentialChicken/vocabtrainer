@@ -7,8 +7,8 @@ import com.example.vocabtrainer.data.VocabDao
 import com.example.vocabtrainer.data.VocabDatabase
 
 class DatabaseServiceRoom(private val vocabDao: VocabDao) : DatabaseService {
-    override suspend fun getVocabs(): List<Vocab> {
-        return vocabDao.getAll()
+    override suspend fun getVocabs(limit: Int): List<Vocab> {
+        return vocabDao.getWithLimit(limit)
     }
 
     override suspend fun uploadTest(vocabs: List<Vocab>) {

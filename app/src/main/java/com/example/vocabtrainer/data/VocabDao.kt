@@ -7,6 +7,9 @@ interface VocabDao {
     @Query("SELECT * FROM vocabs")
     fun getAll(): List<Vocab>
 
+    @Query("SELECT * FROM vocabs LIMIT :limit")
+    fun getWithLimit(limit: Int) : List<Vocab>
+
     @Query("SELECT * FROM vocabs WHERE level=:level")
     fun getByLevel(level: Int) : List<Vocab>
 

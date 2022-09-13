@@ -23,8 +23,8 @@ class VocabRepository @Inject constructor(
         return localDataSource.vocabs
     }
 
-    suspend fun getVocabsDB(): List<Vocab> {
-        return databaseServiceRoom.getVocabs()
+    suspend fun getVocabsDB(limit: Int): List<Vocab> {
+        return databaseServiceRoom.getVocabs(limit)
     }
 
     suspend fun insertVocabsRoom(vocabs: List<Vocab>) {

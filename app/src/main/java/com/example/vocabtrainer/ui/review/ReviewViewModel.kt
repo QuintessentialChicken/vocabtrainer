@@ -2,11 +2,8 @@ package com.example.vocabtrainer.ui.review
 
 import android.app.Application
 import android.util.Log
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import androidx.compose.runtime.toMutableStateList
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.vocabtrainer.data.Vocab
@@ -19,12 +16,16 @@ import com.example.vocabtrainer.services.DatabaseServiceRoom
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
+private const val NUMBER_OF_VOCABS: Int = 10
+
 class ReviewViewModel(application: Application) : AndroidViewModel(application) {
     private val vocabRepository: VocabRepository
-    var uiState by mutableStateOf(ReviewState())
-        private set
 
-    private lateinit var _vocabsLocal: MutableList<Vocab>
+    private var _currentState by mutableStateOf(State.START)
+    private var _vocabIndex by mutableStateOf(0)
+    private var _wrongAnswer by mutableStateOf(false)
+    private lateinit var _vocabsLocal: List<Vocab>
+    private var foreignInput = true
 
     init {
         val userDao = VocabDatabase.getDatabase(application).vocabDao()
@@ -33,49 +34,42 @@ class ReviewViewModel(application: Application) : AndroidViewModel(application) 
             DatabaseServiceFirestore(),
             VocabsLocalDataSource()
         )
-        viewModelScope.launch (Dispatchers.IO) {
-            uiState.vocabs = vocabRepository.getVocabsDB()
-            uiState.currentState = State.LEARNING
-            Log.d("ReviewViewModel", "Is fetched equals: $isFetched")
-        }
     }
 
 
-    private var foreignInput = true
-    private var vocabs: MutableList<Vocab> = mutableListOf()
-    private var _isWrong by mutableStateOf(false)
-    private var _count: Int by mutableStateOf(0)
+//    var isFetched: Boolean by mutableStateOf(false)
 
-
-    var isFetched: Boolean by mutableStateOf(false)
-
-    var isWrong: Boolean
-        get() = _isWrong
+    var currentState: State
+        get() = _currentState
         set(value) {
-            _isWrong = value
+            _currentState = value
         }
-
-    private val vocabsLocal: List<Vocab>
+    val vocabIndex: Int
+        get() = _vocabIndex
+    var wrongAnswer: Boolean
+        get() = _wrongAnswer
+        set(value) {
+            _wrongAnswer = value
+        }
+    val vocabs: List<Vocab>
         get() = _vocabsLocal.toList()
 
-    private var _isCorrect by mutableStateOf(false)
 
-    var correct: Boolean
-        get() = _isCorrect
-        set(value) {
-            _isCorrect = value
+    fun startReview() {
+        currentState = State.LOADING
+        viewModelScope.launch(Dispatchers.IO) {
+            _vocabsLocal = vocabRepository.getVocabsDB(NUMBER_OF_VOCABS)
+            currentState = State.LEARNING
+            Log.d("ReviewViewModel", "Vocabs fetched: $_vocabsLocal")
         }
-
-//    var count: Int
-//        get() = _count
-//        set(value) {
-//            _count = (_count + value) % _vocabsLocal.size
-//        }
-
+    }
 
     fun incrementIndex() {
-        uiState.vocabIndex++
-        if (uiState.vocabIndex >= uiState.numberVocabs) uiState.currentState = State.FINISHED
+        if (vocabIndex + 1 < NUMBER_OF_VOCABS) {
+            _vocabIndex++
+        } else {
+            currentState = State.FINISHED
+        }
     }
 
 //    private fun getVocabInternal(): String {
@@ -90,8 +84,6 @@ class ReviewViewModel(application: Application) : AndroidViewModel(application) 
 //            ""
 //        }
 //    }
-
-
 
 
     fun uploadTest() {
@@ -109,19 +101,19 @@ class ReviewViewModel(application: Application) : AndroidViewModel(application) 
 //        return vocabs
 //    }
 
-    fun checkInput(input: String){
+    fun checkInput(input: String) {
         val trimmedInput = input.trim()
-        if (foreignInput) {
-            uiState.wrongAnswer = (trimmedInput != vocabsLocal[uiState.vocabIndex].foreignWord)
+        wrongAnswer = if (foreignInput) {
+            (trimmedInput != vocabs[vocabIndex].foreignWord)
         } else {
-            uiState.wrongAnswer = (trimmedInput != vocabsLocal[uiState.vocabIndex].domesticWord)
+            (trimmedInput != vocabs[vocabIndex].domesticWord)
         }
     }
 
     fun addVocabs() {
         viewModelScope.launch(Dispatchers.IO) {
-            vocabRepository.insertVocabsRoom(vocabsLocal)
-            Log.d("ReviewViewModel", "Insert done $vocabsLocal")
+            vocabRepository.insertVocabsRoom(vocabs)
+            Log.d("ReviewViewModel", "Insert done $vocabs")
         }
     }
 

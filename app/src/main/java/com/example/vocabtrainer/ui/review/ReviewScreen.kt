@@ -1,13 +1,9 @@
 package com.example.vocabtrainer.ui.review
 
-import android.util.Log
 import androidx.compose.animation.*
 import androidx.compose.animation.core.TweenSpec
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -18,85 +14,34 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 
 private const val CONTENT_ANIMATION_DURATION = 500
 
-
-//@OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
-//@Preview(showSystemUi = true)
-//@Composable
-//fun RevPreview() {
-//    val modifier = Modifier
-//    var input by remember { mutableStateOf("") }
-//    var count by remember { mutableStateOf(0) }
-//    Scaffold(
-//        topBar = {
-//            ReviewTopAppBar(
-//                vocabIndex = -1,
-//                totalVocabCount = 4
-//            )
-//        },
-//
-//        content = {
-//            AnimatedContent(
-//                targetState = count,
-//                transitionSpec = {
-//                    val animationSpec: TweenSpec<IntOffset> = tween(CONTENT_ANIMATION_DURATION)
-//                    val direction = AnimatedContentScope.SlideDirection.Left
-//                    slideIntoContainer(
-//                        towards = direction,
-//                        animationSpec = animationSpec
-//                    ) with
-//                            slideOutOfContainer(
-//                                towards = direction,
-//                                animationSpec = animationSpec
-//                            )
-//                }
-//            ) { targetState ->
-//                ReviewVocab(
-//                    word = "des Olives",
-//                    input = input,
-//                    text = targetState.toString(),
-//                    onValueChange = { input = it },
-//                    onGo = {
-//                        input = ""
-//                        count++
-//                    },
-//                    modifier = modifier
-//                )
-//            }
-//        }
-//    )
-//}
-
-@OptIn(ExperimentalAnimationApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun ReviewScreen(
     viewModel: ReviewViewModel = viewModel(),
 ) {
     val modifier = Modifier
     var input by remember { mutableStateOf("") }
-    val uiState by mutableStateOf(viewModel.uiState)
 
-    Crossfade(targetState = uiState.currentState) { state ->
+    Crossfade(targetState = viewModel.currentState) { state ->
         when (state) {
+            State.START -> Button(onClick = { viewModel.startReview() }) { Text(text = "Click to start Reviewing") }
             State.LOADING -> Text(text = "Not fetched yet, please hold")
             State.LEARNING -> {
                 ReviewTopAppBar(
-                    vocabIndex = uiState.vocabIndex - 1,
-                    totalVocabCount = uiState.vocabs.size
+                    vocabIndex = viewModel.vocabIndex - 1,
+                    totalVocabCount = viewModel.vocabs.size
                 )
 
                 AnimatedContent(
-                    targetState = uiState.vocabIndex,
+                    targetState = viewModel.vocabIndex,
                     transitionSpec = {
                         val animationSpec: TweenSpec<IntOffset> = tween(CONTENT_ANIMATION_DURATION)
                         val direction = AnimatedContentScope.SlideDirection.Left
@@ -110,22 +55,22 @@ fun ReviewScreen(
                                 )
                     }
                 ) { targetState ->
-                    val color: Color by animateColorAsState(if (uiState.wrongAnswer) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceVariant)
+                    val color: Color by animateColorAsState(if (viewModel.wrongAnswer) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceVariant)
                     ReviewVocab(
-                        word = uiState.vocabs[targetState].domesticWord,
+                        word = viewModel.vocabs[targetState].domesticWord,
                         input = input,
                         color = color,
                         text = targetState.toString(),
                         onValueChange = {
                             input = it
-                            uiState.wrongAnswer = false
+                            viewModel.wrongAnswer = false
                         },
                         onGo = {
 //                        if (viewModel.checkInput(input)) {
                             input = ""
                             viewModel.incrementIndex()
 //                        } else {
-//                            viewModel.isWrong = true
+//                            viewModel.wrongAnswer = true
 //                            Log.d("Check if correct", "NOT CORRECT, TRY AGAIN")
 //                        }
                         },
