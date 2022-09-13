@@ -78,10 +78,9 @@ fun ReviewScreen(
                     )
                 }
             }
-            State.FINISHED -> DefaultText(
-                text = "Another review done and dusted",
-                modifier
-            )
+            State.FINISHED -> {
+                Button(onClick = { viewModel.startReview() }) { Text(text = "Click to review more")}
+            }
         }
     }
 }

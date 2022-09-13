@@ -2,15 +2,15 @@ package com.example.vocabtrainer.ui.review
 
 import android.app.Application
 import android.util.Log
-import androidx.compose.runtime.*
-import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.vocabtrainer.data.Vocab
 import com.example.vocabtrainer.data.VocabDatabase
 import com.example.vocabtrainer.data.VocabRepository
 import com.example.vocabtrainer.data.VocabsLocalDataSource
-import com.example.vocabtrainer.navigation.Review
 import com.example.vocabtrainer.services.DatabaseServiceFirestore
 import com.example.vocabtrainer.services.DatabaseServiceRoom
 import kotlinx.coroutines.Dispatchers
@@ -20,6 +20,7 @@ private const val NUMBER_OF_VOCABS: Int = 10
 
 class ReviewViewModel(application: Application) : AndroidViewModel(application) {
     private val vocabRepository: VocabRepository
+    private var correct = MutableList(NUMBER_OF_VOCABS) { false }
 
     private var _currentState by mutableStateOf(State.START)
     private var _vocabIndex by mutableStateOf(0)
@@ -59,8 +60,20 @@ class ReviewViewModel(application: Application) : AndroidViewModel(application) 
         currentState = State.LOADING
         viewModelScope.launch(Dispatchers.IO) {
             _vocabsLocal = vocabRepository.getVocabsDB(NUMBER_OF_VOCABS)
-            currentState = State.LEARNING
+            _vocabIndex = 0
+            _currentState = State.LEARNING
             Log.d("ReviewViewModel", "Vocabs fetched: $_vocabsLocal")
+        }
+    }
+
+    private fun wrapUpReview() {
+        viewModelScope.launch(Dispatchers.IO) {
+            _vocabsLocal.forEachIndexed { index, vocab ->
+                if (correct[index]) vocab.level++
+                vocabRepository.deleteVocabRoom(vocab)
+            }
+            vocabRepository.insertVocabsRoom(_vocabsLocal)
+            currentState = State.FINISHED
         }
     }
 
@@ -68,7 +81,8 @@ class ReviewViewModel(application: Application) : AndroidViewModel(application) 
         if (vocabIndex + 1 < NUMBER_OF_VOCABS) {
             _vocabIndex++
         } else {
-            currentState = State.FINISHED
+            _currentState = State.LOADING
+            wrapUpReview()
         }
     }
 
@@ -86,11 +100,11 @@ class ReviewViewModel(application: Application) : AndroidViewModel(application) 
 //    }
 
 
-    fun uploadTest() {
-        viewModelScope.launch(Dispatchers.IO) {
-            vocabRepository.uploadTest(vocabRepository.getVocabsLocal())
-        }
-    }
+//    fun uploadTest() {
+//        viewModelScope.launch(Dispatchers.IO) {
+//            vocabRepository.uploadTest(vocabRepository.getVocabsLocal())
+//        }
+//    }
 
 //    private fun fetchVocabs(): MutableList<Vocab> {
 //        vocabRepository.getVocabs {
@@ -103,11 +117,12 @@ class ReviewViewModel(application: Application) : AndroidViewModel(application) 
 
     fun checkInput(input: String) {
         val trimmedInput = input.trim()
-        wrongAnswer = if (foreignInput) {
+        _wrongAnswer = if (foreignInput) {
             (trimmedInput != vocabs[vocabIndex].foreignWord)
         } else {
             (trimmedInput != vocabs[vocabIndex].domesticWord)
         }
+        if (!_wrongAnswer) correct[vocabIndex] = true
     }
 
     fun addVocabs() {

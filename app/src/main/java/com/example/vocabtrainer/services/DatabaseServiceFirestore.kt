@@ -30,5 +30,9 @@ class DatabaseServiceFirestore : DatabaseService {
         batch.commit()
     }
 
+    override suspend fun deleteVocab(vocab: Vocab) {
+        TODO("Not yet implemented")
+    }
+
 
 }

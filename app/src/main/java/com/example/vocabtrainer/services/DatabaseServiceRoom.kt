@@ -15,4 +15,10 @@ class DatabaseServiceRoom(private val vocabDao: VocabDao) : DatabaseService {
         vocabDao.insert(vocabs)
     }
 
+    override suspend fun deleteVocab(vocab: Vocab) {
+        vocabDao.delete(vocab)
+    }
+
+
+
 }

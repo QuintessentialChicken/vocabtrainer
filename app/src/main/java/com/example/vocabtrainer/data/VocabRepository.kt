@@ -30,4 +30,8 @@ class VocabRepository @Inject constructor(
     suspend fun insertVocabsRoom(vocabs: List<Vocab>) {
         databaseServiceRoom.uploadTest(vocabs)
     }
+
+    suspend fun deleteVocabRoom(vocab: Vocab){
+        databaseServiceRoom.deleteVocab(vocab)
+    }
 }
