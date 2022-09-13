@@ -1,6 +1,8 @@
 package com.example.vocabtrainer.ui.review
 
 import android.app.Application
+import android.content.Context
+import android.net.Uri
 import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -21,7 +23,6 @@ private const val NUMBER_OF_VOCABS: Int = 10
 class ReviewViewModel(application: Application) : AndroidViewModel(application) {
     private val vocabRepository: VocabRepository
     private var correct = MutableList(NUMBER_OF_VOCABS) { false }
-
     private var _currentState by mutableStateOf(State.START)
     private var _vocabIndex by mutableStateOf(0)
     private var _wrongAnswer by mutableStateOf(false)
@@ -38,7 +39,8 @@ class ReviewViewModel(application: Application) : AndroidViewModel(application) 
     }
 
 
-//    var isFetched: Boolean by mutableStateOf(false)
+    //    var isFetched: Boolean by mutableStateOf(false)
+    var errorMessage: String = ""
 
     var currentState: State
         get() = _currentState
@@ -55,14 +57,36 @@ class ReviewViewModel(application: Application) : AndroidViewModel(application) 
     val vocabs: List<Vocab>
         get() = _vocabsLocal.toList()
 
+    fun parseCSV(uri: Uri, context: Context) {
+        currentState = State.LOADING
+        viewModelScope.launch(Dispatchers.IO) {
+            vocabRepository.insertVocabsRoom(vocabRepository.parseCSV(uri, context))
+            currentState = State.START
+        }
+    }
+
 
     fun startReview() {
         currentState = State.LOADING
         viewModelScope.launch(Dispatchers.IO) {
             _vocabsLocal = vocabRepository.getVocabsDB(NUMBER_OF_VOCABS)
             _vocabIndex = 0
-            _currentState = State.LEARNING
+            if (_vocabsLocal.isEmpty()) {
+                _currentState = State.ERROR
+                errorMessage = "No vocabs available, create or import some first"
+            } else {
+                _currentState = State.LEARNING
+            }
             Log.d("ReviewViewModel", "Vocabs fetched: $_vocabsLocal")
+        }
+    }
+
+    fun incrementIndex() {
+        if (vocabIndex + 1 < vocabs.size) {
+            _vocabIndex++
+        } else {
+            _currentState = State.LOADING
+            wrapUpReview()
         }
     }
 
@@ -77,14 +101,6 @@ class ReviewViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    fun incrementIndex() {
-        if (vocabIndex + 1 < NUMBER_OF_VOCABS) {
-            _vocabIndex++
-        } else {
-            _currentState = State.LOADING
-            wrapUpReview()
-        }
-    }
 
 //    private fun getVocabInternal(): String {
 //        return if (isFetched) {

@@ -1,5 +1,8 @@
 package com.example.vocabtrainer.ui.review
 
+import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.animation.core.TweenSpec
 import androidx.compose.animation.core.animateFloatAsState
@@ -14,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
@@ -22,66 +26,94 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 
 private const val CONTENT_ANIMATION_DURATION = 500
 
+
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun ReviewScreen(
     viewModel: ReviewViewModel = viewModel(),
 ) {
+    val context = LocalContext.current
     val modifier = Modifier
     var input by remember { mutableStateOf("") }
+    val filePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) {
+            viewModel.parseCSV(uri, context)
+        }
+    }
 
-    Crossfade(targetState = viewModel.currentState) { state ->
-        when (state) {
+    BackHandler(enabled = viewModel.currentState != State.START) {
+        viewModel.currentState = State.START
+    }
+    Box(
+        modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+//        Crossfade(targetState = viewModel.currentState) { state ->
+        when (viewModel.currentState) {
             State.START -> Button(onClick = { viewModel.startReview() }) { Text(text = "Click to start Reviewing") }
-            State.LOADING -> Text(text = "Not fetched yet, please hold")
+            State.LOADING -> {}//TODO Make some sort of spinner
+            State.ERROR -> {
+                Button(
+                    onClick = {
+                        filePickerLauncher.launch("text/comma-separated-values")
+                    }) {
+                    DefaultText(text = viewModel.errorMessage, modifier = modifier)
+                }
+            }
             State.LEARNING -> {
-                ReviewTopAppBar(
-                    vocabIndex = viewModel.vocabIndex - 1,
-                    totalVocabCount = viewModel.vocabs.size
-                )
+                Column {
+                    ReviewTopAppBar(
+                        vocabIndex = viewModel.vocabIndex - 1,
+                        totalVocabCount = viewModel.vocabs.size
+                    )
 
-                AnimatedContent(
-                    targetState = viewModel.vocabIndex,
-                    transitionSpec = {
-                        val animationSpec: TweenSpec<IntOffset> = tween(CONTENT_ANIMATION_DURATION)
-                        val direction = AnimatedContentScope.SlideDirection.Left
-                        slideIntoContainer(
-                            towards = direction,
-                            animationSpec = animationSpec
-                        ) with
-                                slideOutOfContainer(
-                                    towards = direction,
-                                    animationSpec = animationSpec
-                                )
-                    }
-                ) { targetState ->
-                    val color: Color by animateColorAsState(if (viewModel.wrongAnswer) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceVariant)
-                    ReviewVocab(
-                        word = viewModel.vocabs[targetState].domesticWord,
-                        input = input,
-                        color = color,
-                        text = targetState.toString(),
-                        onValueChange = {
-                            input = it
-                            viewModel.wrongAnswer = false
-                        },
-                        onGo = {
+                    AnimatedContent(
+                        targetState = viewModel.vocabIndex,
+                        transitionSpec = {
+                            val animationSpec: TweenSpec<IntOffset> =
+                                tween(CONTENT_ANIMATION_DURATION)
+                            val direction = AnimatedContentScope.SlideDirection.Left
+                            slideIntoContainer(
+                                towards = direction,
+                                animationSpec = animationSpec
+                            ) with
+                                    slideOutOfContainer(
+                                        towards = direction,
+                                        animationSpec = animationSpec
+                                    )
+                        }
+                    ) { targetState ->
+                        val color: Color by animateColorAsState(if (viewModel.wrongAnswer) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceVariant)
+                        ReviewVocab(
+                            word = viewModel.vocabs[targetState].domesticWord,
+                            input = input,
+                            color = color,
+                            text = targetState.toString(),
+                            onValueChange = {
+                                input = it
+                                viewModel.wrongAnswer = false
+                            },
+                            onGo = {
 //                        if (viewModel.checkInput(input)) {
-                            input = ""
-                            viewModel.incrementIndex()
+                                input = ""
+                                viewModel.incrementIndex()
 //                        } else {
 //                            viewModel.wrongAnswer = true
 //                            Log.d("Check if correct", "NOT CORRECT, TRY AGAIN")
 //                        }
-                        },
-                        modifier = modifier
-                    )
+                            },
+                            modifier = modifier
+                        )
+                    }
                 }
             }
             State.FINISHED -> {
-                Button(onClick = { viewModel.startReview() }) { Text(text = "Click to review more")}
+                Button(onClick = { viewModel.startReview() }) { Text(text = "Click to review more") }
             }
         }
+//        }
     }
 }
 
@@ -102,6 +134,7 @@ fun ReviewVocab(
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
     }
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -126,11 +159,6 @@ fun ReviewVocab(
             colors = TextFieldDefaults.textFieldColors(
                 containerColor = color
             )
-        )
-        DefaultText(
-            //Displays Count
-            text = text,
-            modifier = modifier,
         )
     }
 }

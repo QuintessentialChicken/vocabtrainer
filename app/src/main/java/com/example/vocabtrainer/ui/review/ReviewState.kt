@@ -1,7 +1,5 @@
 package com.example.vocabtrainer.ui.review
 
-import com.example.vocabtrainer.data.Vocab
-
 //data class ReviewState(
 //    var currentState: State = State.LOADING,
 //    val numberVocabs: Int = 10,
@@ -13,6 +11,7 @@ import com.example.vocabtrainer.data.Vocab
 enum class State {
     START,
     LOADING,
+    ERROR,
     LEARNING,
     FINISHED
 }

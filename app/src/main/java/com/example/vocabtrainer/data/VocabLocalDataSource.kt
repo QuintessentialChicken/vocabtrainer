@@ -5,6 +5,6 @@ import javax.inject.Inject
 class VocabsLocalDataSource @Inject constructor() {
 
     val vocabs = mutableListOf(
-        Vocab("des cacahuètes", "Erdnüsse", 1),
+        Vocab("des cacahuètes", "Erdnüsse", "Französisch",1),
     )
 }

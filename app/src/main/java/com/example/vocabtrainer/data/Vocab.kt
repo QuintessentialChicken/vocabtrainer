@@ -7,5 +7,6 @@ import androidx.room.PrimaryKey
 data class Vocab(
     @PrimaryKey val domesticWord: String = "",
     val foreignWord: String = "",
+    val foreignLanguage: String = "",
     var level: Int = 1,
 )
