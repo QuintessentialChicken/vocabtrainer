@@ -28,6 +28,7 @@ class ReviewViewModel(application: Application) : AndroidViewModel(application) 
     private var _wrongAnswer by mutableStateOf(false)
     private lateinit var _vocabsLocal: List<Vocab>
     private var foreignInput = true
+    var learnMode by mutableStateOf(false)
 
     init {
         val userDao = VocabDatabase.getDatabase(application).vocabDao()
@@ -93,7 +94,7 @@ class ReviewViewModel(application: Application) : AndroidViewModel(application) 
     private fun wrapUpReview() {
         viewModelScope.launch(Dispatchers.IO) {
             _vocabsLocal.forEachIndexed { index, vocab ->
-                if (correct[index]) vocab.level++
+                if (!learnMode && correct[index]) vocab.level++
                 vocabRepository.deleteVocabRoom(vocab)
             }
             vocabRepository.insertVocabsRoom(_vocabsLocal)

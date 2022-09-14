@@ -7,9 +7,12 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.TweenSpec
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -46,13 +49,26 @@ fun ReviewScreen(
     BackHandler(enabled = viewModel.currentState != State.START) {
         viewModel.currentState = State.START
     }
-    Box(
+    Column(
         modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
 //        Crossfade(targetState = viewModel.currentState) { state ->
         when (viewModel.currentState) {
-            State.START -> Button(onClick = { viewModel.startReview() }) { Text(text = "Click to start Reviewing") }
+            State.START -> {
+                Button(
+                    onClick = {
+                        viewModel.startReview()
+                    }) {
+                    Text(text = "Click to start Reviewing")
+                }
+                LabeledCheckbox(
+                    checked = viewModel.learnMode,
+                    onCheckedChange = { viewModel.learnMode = !viewModel.learnMode },
+                    label = "Learn mode"
+                )
+            }
             State.LOADING -> {}//TODO Make some sort of spinner
             State.ERROR -> {
                 Button(
@@ -63,50 +79,49 @@ fun ReviewScreen(
                 }
             }
             State.LEARNING -> {
-                Column {
-                    ReviewTopAppBar(
-                        vocabIndex = viewModel.vocabIndex - 1,
-                        totalVocabCount = viewModel.vocabs.size
-                    )
+                ReviewTopAppBar(
+                    vocabIndex = viewModel.vocabIndex - 1,
+                    totalVocabCount = viewModel.vocabs.size
+                )
 
-                    AnimatedContent(
-                        targetState = viewModel.vocabIndex,
-                        transitionSpec = {
-                            val animationSpec: TweenSpec<IntOffset> =
-                                tween(CONTENT_ANIMATION_DURATION)
-                            val direction = AnimatedContentScope.SlideDirection.Left
-                            slideIntoContainer(
-                                towards = direction,
-                                animationSpec = animationSpec
-                            ) with
-                                    slideOutOfContainer(
-                                        towards = direction,
-                                        animationSpec = animationSpec
-                                    )
-                        }
-                    ) { targetState ->
-                        val color: Color by animateColorAsState(if (viewModel.wrongAnswer) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceVariant)
-                        ReviewVocab(
-                            word = viewModel.vocabs[targetState].domesticWord,
-                            input = input,
-                            color = color,
-                            text = targetState.toString(),
-                            onValueChange = {
-                                input = it
-                                viewModel.wrongAnswer = false
-                            },
-                            onGo = {
+                AnimatedContent(
+                    targetState = viewModel.vocabIndex,
+                    transitionSpec = {
+                        val animationSpec: TweenSpec<IntOffset> =
+                            tween(CONTENT_ANIMATION_DURATION)
+                        val direction = AnimatedContentScope.SlideDirection.Left
+                        slideIntoContainer(
+                            towards = direction,
+                            animationSpec = animationSpec
+                        ) with
+                                slideOutOfContainer(
+                                    towards = direction,
+                                    animationSpec = animationSpec
+                                )
+                    }
+                ) { targetState ->
+                    val color: Color by animateColorAsState(if (viewModel.wrongAnswer) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceVariant)
+                    ReviewVocab(
+                        word = viewModel.vocabs[targetState].domesticWord,
+                        translation = viewModel.vocabs[targetState].foreignWord,
+                        input = input,
+                        color = color,
+                        learnMode = viewModel.learnMode,
+                        onValueChange = {
+                            input = it
+                            viewModel.wrongAnswer = false
+                        },
+                        onGo = {
 //                        if (viewModel.checkInput(input)) {
-                                input = ""
-                                viewModel.incrementIndex()
+                            input = ""
+                            viewModel.incrementIndex()
 //                        } else {
 //                            viewModel.wrongAnswer = true
 //                            Log.d("Check if correct", "NOT CORRECT, TRY AGAIN")
 //                        }
-                            },
-                            modifier = modifier
-                        )
-                    }
+                        },
+                        modifier = modifier
+                    )
                 }
             }
             State.FINISHED -> {
@@ -121,9 +136,10 @@ fun ReviewScreen(
 @Composable
 fun ReviewVocab(
     word: String,
+    translation: String,
     input: String,
-    text: String,
     color: Color,
+    learnMode: Boolean,
     onValueChange: (String) -> Unit,
     onGo: () -> Unit,
     modifier: Modifier
@@ -144,6 +160,8 @@ fun ReviewVocab(
     ) {
         ReviewCard(
             word = word,
+            translation = translation,
+            learnMode = learnMode,
             modifier = modifier
         )
         TextField(  //Input
@@ -166,25 +184,33 @@ fun ReviewVocab(
 @Composable
 fun ReviewCard(
     word: String,
+    translation: String,
+    learnMode: Boolean,
     modifier: Modifier
 ) {
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .fillMaxHeight(0.3F),
+            .fillMaxHeight(0.4F),
         elevation = CardDefaults.cardElevation(
             defaultElevation = 4.dp
         )
     ) {
-        Box(
+        Column(
             modifier = modifier
                 .fillMaxSize(),
-            contentAlignment = Alignment.Center
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
             DefaultText(
                 text = word,
                 modifier = modifier
             )
+            if (learnMode) {
+                Text(
+                    text = translation
+                )
+            }
         }
     }
 }
@@ -229,4 +255,37 @@ fun DefaultText(
         textAlign = TextAlign.Center,
         style = MaterialTheme.typography.headlineLarge,
     )
+}
+
+
+@Composable
+fun LabeledCheckbox(
+    checked: Boolean,
+    onCheckedChange: (() -> Unit),
+    label: String,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+//            .clip(MaterialTheme.shapes.small)
+            .clickable(
+                indication = rememberRipple(color = MaterialTheme.colorScheme.primary),
+                interactionSource = remember { MutableInteractionSource() },
+                onClick = { onCheckedChange() }
+            )
+            .requiredHeight(ButtonDefaults.MinHeight)
+            .padding(4.dp)
+    ) {
+        Checkbox(
+            checked = checked,
+            onCheckedChange = null
+        )
+
+        Spacer(Modifier.size(6.dp))
+
+        Text(
+            text = label,
+        )
+    }
 }
