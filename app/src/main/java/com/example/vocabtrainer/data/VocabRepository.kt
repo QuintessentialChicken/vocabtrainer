@@ -44,8 +44,8 @@ class VocabRepository @Inject constructor(
         return reader.bufferedReader().lineSequence()
             .filter { it.isNotBlank() }
             .map {
-                val (langA, langB, vocabA, vocabB) = it.split(",", limit = 4)
-                Vocab(vocabA, vocabB, langA)
+                val (vocabA, vocabB) = it.split(";", limit = 2)
+                Vocab(vocabA, vocabB, "Französisch")
             }
             .toList()
     }

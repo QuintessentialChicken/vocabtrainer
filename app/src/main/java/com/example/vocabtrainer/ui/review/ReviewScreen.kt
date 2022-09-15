@@ -75,7 +75,7 @@ fun ReviewScreen(
                     onClick = {
                         filePickerLauncher.launch("text/comma-separated-values")
                     }) {
-                    DefaultText(text = viewModel.errorMessage, modifier = modifier)
+                    Text(text = viewModel.errorMessage, modifier = modifier)
                 }
             }
             State.LEARNING -> {
@@ -106,19 +106,31 @@ fun ReviewScreen(
                         translation = viewModel.vocabs[targetState].foreignWord,
                         input = input,
                         color = color,
+                        wrongAnswer = viewModel.wrongAnswer,
                         learnMode = viewModel.learnMode,
+                        showHint = viewModel.showHint,
                         onValueChange = {
                             input = it
                             viewModel.wrongAnswer = false
                         },
                         onGo = {
-//                        if (viewModel.checkInput(input)) {
-                            input = ""
-                            viewModel.incrementIndex()
-//                        } else {
-//                            viewModel.wrongAnswer = true
-//                            Log.d("Check if correct", "NOT CORRECT, TRY AGAIN")
-//                        }
+                            if (viewModel.learnMode) {
+                                input = ""
+                                viewModel.incrementIndex()
+                            } else {
+                                if (!viewModel.checkInput(input)) {
+                                    input = ""
+                                    viewModel.wrongAnswer = false
+                                    viewModel.showHint = false
+                                    viewModel.incrementIndex()
+                                } else {
+                                    if (viewModel.wrongAnswer) {
+                                        viewModel.showHint = true
+                                    } else {
+                                        viewModel.wrongAnswer = true
+                                    }
+                                }
+                            }
                         },
                         modifier = modifier
                     )
@@ -140,6 +152,8 @@ fun ReviewVocab(
     input: String,
     color: Color,
     learnMode: Boolean,
+    wrongAnswer: Boolean,
+    showHint: Boolean,
     onValueChange: (String) -> Unit,
     onGo: () -> Unit,
     modifier: Modifier
@@ -176,8 +190,19 @@ fun ReviewVocab(
             ),
             colors = TextFieldDefaults.textFieldColors(
                 containerColor = color
-            )
+            ),
+            placeholder = {
+                if (showHint) {
+                    Text(translation)
+                }
+            }
         )
+        if (wrongAnswer) {
+            Text(
+                text = "Press Enter again to reveal",
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
     }
 }
 

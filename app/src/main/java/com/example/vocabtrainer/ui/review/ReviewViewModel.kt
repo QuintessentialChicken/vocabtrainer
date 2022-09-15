@@ -18,17 +18,18 @@ import com.example.vocabtrainer.services.DatabaseServiceRoom
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-private const val NUMBER_OF_VOCABS: Int = 10
+private const val NUMBER_OF_VOCABS: Int = 5
 
 class ReviewViewModel(application: Application) : AndroidViewModel(application) {
     private val vocabRepository: VocabRepository
-    private var correct = MutableList(NUMBER_OF_VOCABS) { false }
+    private var correct = MutableList(NUMBER_OF_VOCABS) { true }
     private var _currentState by mutableStateOf(State.START)
     private var _vocabIndex by mutableStateOf(0)
     private var _wrongAnswer by mutableStateOf(false)
     private lateinit var _vocabsLocal: List<Vocab>
     private var foreignInput = true
     var learnMode by mutableStateOf(false)
+    var showHint by mutableStateOf(false)
 
     init {
         val userDao = VocabDatabase.getDatabase(application).vocabDao()
@@ -132,14 +133,23 @@ class ReviewViewModel(application: Application) : AndroidViewModel(application) 
 //        return vocabs
 //    }
 
-    fun checkInput(input: String) {
+    fun checkInput(input: String): Boolean {
         val trimmedInput = input.trim()
-        _wrongAnswer = if (foreignInput) {
-            (trimmedInput != vocabs[vocabIndex].foreignWord)
+        var wrong = true
+        if (foreignInput) {
+            val splitVocabs = vocabs[vocabIndex].foreignWord.split(',', '/')
+            for (word in splitVocabs) {
+                if (word.trim() == trimmedInput) wrong = false
+            }
+            Log.d("InputChecker", "Split vocabs are: $splitVocabs and input is $input")
+            (!splitVocabs.contains(input))
         } else {
-            (trimmedInput != vocabs[vocabIndex].domesticWord)
-        }
-        if (!_wrongAnswer) correct[vocabIndex] = true
+            val splitVocabs = vocabs[vocabIndex].foreignWord.split(',', '/')
+            for (word in splitVocabs) {
+                if (word.trim() == trimmedInput) wrong = false
+            }        }
+        if (wrong) correct[vocabIndex] = false
+        return wrong
     }
 
     fun addVocabs() {
