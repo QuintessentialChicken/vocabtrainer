@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
 import com.toxillo.vocabtrainer.navigation.SetupNavGraph
 import com.toxillo.vocabtrainer.ui.components.BottomBar
+import com.toxillo.vocabtrainer.ui.components.TopBar
 import com.toxillo.vocabtrainer.ui.theme.VocabTrainerTheme
 
 class MainActivity : ComponentActivity() {
@@ -25,13 +26,15 @@ class MainActivity : ComponentActivity() {
 }
 
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VocabTrainerApp() {
     VocabTrainerTheme {
         val navController = rememberNavController()
         Scaffold(
+            topBar = {
+                TopBar()
+            },
             containerColor = MaterialTheme.colorScheme.onPrimary,
             bottomBar = { BottomBar(navController = navController) },
             content = { padding ->

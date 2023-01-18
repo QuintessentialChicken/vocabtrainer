@@ -50,14 +50,19 @@ fun ReviewScreen(
     BackHandler(enabled = viewModel.currentState != State.START) {
         viewModel.currentState = State.START
     }
-    Column(
-        modifier.fillMaxSize().background(Color.Red),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
+
 //        Crossfade(targetState = viewModel.currentState) { state ->
-        when (viewModel.currentState) {
-            State.START -> {
+    when (viewModel.currentState) {
+        State.START -> {
+            Column(
+                modifier
+                    .fillMaxSize()
+                    .background(Color.Red)
+                    .padding(top = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+
+            ) {
                 Card(
                     modifier = modifier
                         .fillMaxWidth(0.8f)
@@ -71,6 +76,7 @@ fun ReviewScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
+
                         Button(
                             modifier = modifier.fillMaxWidth(),
                             onClick = {
@@ -87,24 +93,27 @@ fun ReviewScreen(
                         }
                     }
                 }
-//                LabeledCheckbox(
-//                    checked = viewModel.learnMode,
-//                    onCheckedChange = { viewModel.learnMode = !viewModel.learnMode },
-//                    label = "Learn mode"
-//                )
             }
-            State.LOADING -> {
-                CircularProgressIndicator()
+        }
+        State.LOADING -> {
+            CircularProgressIndicator()
+        }
+        State.ERROR -> {
+            Button(
+                onClick = {
+                    filePickerLauncher.launch("text/comma-separated-values")
+                }) {
+                Text(text = viewModel.errorMessage, modifier = modifier)
             }
-            State.ERROR -> {
-                Button(
-                    onClick = {
-                        filePickerLauncher.launch("text/comma-separated-values")
-                    }) {
-                    Text(text = viewModel.errorMessage, modifier = modifier)
-                }
-            }
-            State.LEARNING -> {
+        }
+        State.LEARNING -> {
+            Column(
+                modifier
+                    .fillMaxSize()
+                    .background(Color.Red),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
                 ReviewTopAppBar(
                     vocabIndex = viewModel.vocabIndex - 1,
                     totalVocabCount = viewModel.vocabs.size
@@ -159,17 +168,26 @@ fun ReviewScreen(
                                 }
                             }
                         },
-                        modifier = modifier
+                        modifier = modifier.background(Color.Blue)
                     )
                 }
             }
-            State.FINISHED -> {
+        }
+        State.FINISHED -> {
+            Column(
+                modifier
+                    .fillMaxSize()
+                    .background(Color.Red),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
                 Button(onClick = { viewModel.startReview() }) { Text(text = "Click to review more") }
             }
         }
-//        }
     }
+//        }
 }
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
